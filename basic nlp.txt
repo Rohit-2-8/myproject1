@@ -1,0 +1,73 @@
+import pandas as pd
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer, PorterStemmer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+
+# Make sure you have these resources
+nltk.download("stopwords")
+nltk.download("wordnet")
+
+# Sample DataFrame
+data = {
+    "Text": [
+        "I loved the new movie! It was fantastic and inspiring.",
+        "The food was terrible, I will never go back there again.",
+        "The product quality is good but delivery was late.",
+        "I am so happy with the service, absolutely wonderful!"
+    ]
+}
+df = pd.DataFrame(data)
+
+# Initialize NLP tools
+stop_words = set(stopwords.words("english"))
+lemmatizer = WordNetLemmatizer()
+stemmer = PorterStemmer()
+
+# Text cleaning function
+def preprocess(text):
+    # 1. Lowercasing
+    text = text.lower()
+    
+    # 2. Remove punctuation/numbers
+    text = re.sub(r"[^a-z\s]", "", text)
+    
+    # 3. Tokenization
+    tokens = text.split()
+    
+    # 4. Stopword removal
+    tokens = [t for t in tokens if t not in stop_words]
+    
+    # 5. Lemmatization
+    lemmas = [lemmatizer.lemmatize(t) for t in tokens]
+    
+    # 6. Stemming (optional)
+    stems = [stemmer.stem(t) for t in lemmas]
+    
+    return {
+        "clean_text": " ".join(tokens),
+        "lemmas": " ".join(lemmas),
+        "stems": " ".join(stems)
+    }
+
+# Apply preprocessing
+processed = df["Text"].apply(preprocess)
+df = pd.concat([df, processed.apply(pd.Series)], axis=1)
+
+# Bag of Words representation
+vectorizer = CountVectorizer()
+bow_matrix = vectorizer.fit_transform(df["lemmas"])
+
+# TF-IDF representation
+tfidf = TfidfVectorizer()
+tfidf_matrix = tfidf.fit_transform(df["lemmas"])
+
+print("==== Preprocessed DataFrame ====")
+print(df)
+
+print("\n==== Bag of Words Vocabulary ====")
+print(vectorizer.get_feature_names_out())
+
+print("\n==== TF-IDF Vocabulary ====")
+print(tfidf.get_feature_names_out())

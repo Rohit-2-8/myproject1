@@ -1,0 +1,46 @@
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+# Sample DataFrame
+data = {
+    "Name": ["Alice", "Bob", "Charlie", "David", "Eva"],
+    "Marks": [85, 67, 90, 72, 60],
+    "Subject": ["Math", "Math", "Physics", "Physics", "Biology"],
+    "Attendance": [92, 75, 88, 80, 70]
+}
+df = pd.DataFrame(data)
+
+# 1. Bar Chart - Student Marks
+fig_bar = px.bar(df, x="Name", y="Marks", color="Subject",
+                 title="Student Marks by Subject")
+fig_bar.show()
+
+# 2. Line Chart - Attendance
+fig_line = px.line(df, x="Name", y="Attendance", markers=True,
+                   title="Student Attendance Trend")
+fig_line.show()
+
+# 3. Scatter Plot - Marks vs Attendance
+fig_scatter = px.scatter(df, x="Marks", y="Attendance", color="Name",
+                         size="Marks", title="Marks vs Attendance")
+fig_scatter.show()
+
+# 4. Pie Chart - Subject Distribution
+fig_pie = px.pie(df, names="Subject", title="Subject Distribution")
+fig_pie.show()
+
+# 5. Box Plot - Marks Distribution
+fig_box = px.box(df, y="Marks", points="all", title="Marks Distribution")
+fig_box.show()
+
+# 6. Heatmap (Correlation Matrix)
+corr = df[["Marks", "Attendance"]].corr()
+fig_heatmap = go.Figure(data=go.Heatmap(
+    z=corr.values,
+    x=corr.columns,
+    y=corr.columns,
+    colorscale="Viridis"
+))
+fig_heatmap.update_layout(title="Correlation Heatmap")
+fig_heatmap.show()

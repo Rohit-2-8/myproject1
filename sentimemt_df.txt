@@ -1,0 +1,34 @@
+import pandas as pd
+
+# Sample DataFrame
+data = {
+    "Review": [
+        "The product is good and excellent in quality",
+        "This is a bad product, very poor and terrible",
+        "Average experience, nothing special",
+        "Good value but delivery was bad",
+        "Excellent service and friendly staff"
+    ]
+}
+df = pd.DataFrame(data)
+
+# Define simple positive/negative word lists
+good_words = {"good", "excellent", "amazing", "great", "wonderful", "friendly", "value"}
+bad_words = {"bad", "poor", "terrible", "awful", "worst", "horrible"}
+
+def sentiment_analysis(text):
+    words = text.lower().split()
+    good_count = sum(1 for w in words if w in good_words)
+    bad_count = sum(1 for w in words if w in bad_words)
+
+    if good_count > bad_count:
+        return "Positive"
+    elif bad_count > good_count:
+        return "Negative"
+    else:
+        return "Neutral"
+
+# Apply sentiment analysis to DataFrame
+df["Sentiment"] = df["Review"].apply(sentiment_analysis)
+
+print(df)
