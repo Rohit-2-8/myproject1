@@ -1,0 +1,30 @@
+// Case class to represent a Student
+case class Student(id: Int, name: String, marks: Int)
+
+object StudentApp {
+  def main(args: Array[String]): Unit = {
+
+    // List of students
+    val students = List(
+      Student(1, "Alice", 85),
+      Student(2, "Bob", 67),
+      Student(3, "Charlie", 45),
+      Student(4, "David", 90)
+    )
+
+    // Use map + pattern matching (case) to assign grades
+    val gradedStudents = students.map {
+      case Student(id, name, marks) if marks >= 80 => s"$name got Grade A"
+      case Student(id, name, marks) if marks >= 60 => s"$name got Grade B"
+      case Student(id, name, marks) if marks >= 40 => s"$name got Grade C"
+      case Student(id, name, _)                    => s"$name got Grade F"
+    }
+
+    // Print results
+    gradedStudents.foreach(println)
+
+    // Using apply explicitly
+    val newStudent = Student.apply(5, "Eva", 72) // Normally we just write Student(5, "Eva", 72)
+    println(s"New Student created with apply: $newStudent")
+  }
+}

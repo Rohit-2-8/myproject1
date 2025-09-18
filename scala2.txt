@@ -1,0 +1,24 @@
+object WordCountApp {
+  def main(args: Array[String]): Unit = {
+
+    // Sample text
+    val text = "Scala is great and Scala is powerful and functional"
+
+    // Step 1: Split into words (convert to lowercase for consistency)
+    val words = text.toLowerCase.split("\\s+").toList
+
+    // Step 2: Count words using map + groupBy
+    val wordCount = words.groupBy(identity).map {
+      case (word, occurrences) => (word, occurrences.size)
+    }
+
+    // Step 3: Print result
+    wordCount.foreach { case (word, count) =>
+      println(s"$word -> $count")
+    }
+
+    // Step 4: Demonstrating apply explicitly
+    val getCountOfScala = wordCount.apply("scala")  // same as wordCount("scala")
+    println(s"\nCount of word 'scala' using apply: $getCountOfScala")
+  }
+}

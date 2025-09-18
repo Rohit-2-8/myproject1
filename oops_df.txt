@@ -1,0 +1,52 @@
+import pandas as pd
+
+# ---- Base Class ----
+class Student:
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+
+    def display(self):
+        print(self.df)
+
+
+# ---- Derived Class: Hosteller ----
+class Hosteller(Student):
+    def __init__(self, df: pd.DataFrame):
+        # filter hostellers only
+        hosteller_df = df[df["Type"] == "Hosteller"].reset_index(drop=True)
+        super().__init__(hosteller_df)
+
+
+# ---- Derived Class: DayScholar ----
+class DayScholar(Student):
+    def __init__(self, df: pd.DataFrame):
+        # filter day scholars only
+        dayscholar_df = df[df["Type"] == "DayScholar"].reset_index(drop=True)
+        super().__init__(dayscholar_df)
+
+
+# ---- Example Usage ----
+if __name__ == "__main__":
+    # Sample student data
+    data = {
+        "ID": [1, 2, 3, 4, 5],
+        "Name": ["Alice", "Bob", "Charlie", "David", "Eva"],
+        "Type": ["Hosteller", "DayScholar", "Hosteller", "DayScholar", "Hosteller"],
+        "Course": ["CS", "Math", "Physics", "CS", "Biology"]
+    }
+
+    df = pd.DataFrame(data)
+
+    # Create objects
+    all_students = Student(df)
+    hostellers = Hosteller(df)
+    dayscholars = DayScholar(df)
+
+    print("\n---- All Students ----")
+    all_students.display()
+
+    print("\n---- Hostellers ----")
+    hostellers.display()
+
+    print("\n---- Day Scholars ----")
+    dayscholars.display()
