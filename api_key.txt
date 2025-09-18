@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
 
-API_KEY = 'jYr2AVsmrj2B0uhdbrDLjEzPCipzwlmb'
+API_KEY = ''
 lat = 13.0827
 lon = 80.2707
 url = 'https://api.windy.com/api/point-forecast/v2'
