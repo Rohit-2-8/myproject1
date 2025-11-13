@@ -1,0 +1,86 @@
+libraryDependencies += "org.scalanlp" %% "breeze" % "2.1.0"
+
+libraryDependencies += "io.github.pityka" %% "saddle-core" % "4.0.0-M10" (works only in scala 2.13)
+
+
+sample code for k-means using breeze:
+
+import breeze.linalg._
+import breeze.stats.distributions._
+import org.apache.commons.math3.random.MersenneTwister
+import breeze.numerics.pow
+import breeze.stats.mean
+
+
+object KMeansOnlyBreeze extends App {
+
+  // ----------------------------------
+  // 1️⃣ Setup random generator
+  // ----------------------------------
+  import breeze.stats.distributions.{RandBasis, ThreadLocalRandomGenerator}
+  implicit val randBasis: RandBasis =
+    new RandBasis(new ThreadLocalRandomGenerator(new MersenneTwister()))
+
+  // ----------------------------------
+  // 2️⃣ Generate synthetic 2D data
+  // ----------------------------------
+  val cluster1 = DenseMatrix.rand(50, 2, Gaussian(2.0, 0.3))
+  val cluster2 = DenseMatrix.rand(50, 2, Gaussian(6.0, 0.4))
+  val cluster3 = DenseMatrix.rand(50, 2, Gaussian(9.0, 0.5))
+
+  val data = DenseMatrix.vertcat(cluster1, cluster2, cluster3)
+  val n = data.rows
+
+  println(s"Data shape: ${data.rows} x ${data.cols}")
+
+  // ----------------------------------
+  // 3️⃣ Manual distance function
+  // ----------------------------------
+  def distance(a: DenseVector[Double], b: DenseVector[Double]): Double =
+  math.sqrt(sum(pow(a - b, 2.0)))
+  // ----------------------------------
+  // 4️⃣ K-Means implementation
+  // ----------------------------------
+  def kmeans(data: DenseMatrix[Double], k: Int, maxIter: Int = 100): (DenseVector[Int], DenseMatrix[Double]) = {
+    val rnd = scala.util.Random
+    var centroids = data(rnd.shuffle((0 until n).toList).take(k), ::).toDenseMatrix
+    var assignments = DenseVector.zeros[Int](n)
+
+    for (_ <- 0 until maxIter) {
+      // Step 1: Assign to nearest centroid
+      for (i <- 0 until n) {
+        val point = data(i, ::).t
+        val distances = (0 until k).map(j => distance(point, centroids(j, ::).t))
+        assignments(i) = distances.zipWithIndex.minBy(_._1)._2
+      }
+
+      // Step 2: Update centroids
+      for (j <- 0 until k) {
+        val clusterPoints = (0 until n).filter(assignments(_) == j)
+        if (clusterPoints.nonEmpty) {
+          val clusterMat = data(clusterPoints, ::).toDenseMatrix
+          val colMeans = mean(clusterMat(::, *)).t
+          centroids(j, ::) := colMeans.t
+        }
+      }
+    }
+    (assignments, centroids)
+  }
+
+  // ----------------------------------
+  // 5️⃣ Run K-Means
+  // ----------------------------------
+  val k = 3
+  val (labels, centroids) = kmeans(data, k)
+
+  println("\nCluster centroids:")
+  println(centroids)
+
+  // ----------------------------------
+  // 6️⃣ Print sample results
+  // ----------------------------------
+  println("\nSample clustered points:")
+  for (i <- 0 until 10) {
+    println(f"Point: (${data(i, 0)}%1.2f, ${data(i, 1)}%1.2f) -> Cluster ${labels(i)}")
+  }
+}
