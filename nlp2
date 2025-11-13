@@ -1,0 +1,131 @@
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+from textblob import TextBlob
+import spacy
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab') # Added as per error message suggestion
+
+# Load spaCy model for NER + POS
+type_ = "en_core_web_sm"
+try:
+    nlp_spacy = spacy.load(type_)
+except:
+    import spacy.cli
+    spacy.cli.download(type_)
+    nlp_spacy = spacy.load(type_)
+
+# ---- NLP PIPELINE ---- #
+
+def clean_text(text):
+    text = str(text).lower()
+    for ch in "!@#$%^&*()[]{};:,./?<>|\'\"-_=+":
+        text = text.replace(ch, ' ')
+    return ' '.join(text.split())
+
+
+def preprocess(df, text_col):
+    stop = set(stopwords.words('english'))
+    lem = WordNetLemmatizer()
+
+    df['cleaned'] = df[text_col].astype(str).apply(clean_text)
+    df['tokens'] = df['cleaned'].apply(lambda x: [lem.lemmatize(w) for w in word_tokenize(x, language='english') if w not in stop])
+    df['joined'] = df['tokens'].apply(lambda lst: ' '.join(lst))
+    return df
+
+
+def extract_ner_pos(df, text_col):
+    ner_list, pos_list = [], []
+    for t in df[text_col].astype(str):
+        doc = nlp_spacy(t)
+        ner_list.append([(e.text, e.label_) for e in doc.ents])
+        pos_list.append([(tok.text, tok.pos_) for tok in doc])
+    df['ner'] = ner_list
+    df['pos'] = pos_list
+    return df
+
+
+def tfidf_features(df):
+    tfidf = TfidfVectorizer(max_features=3000)
+    X = tfidf.fit_transform(df['joined'])
+    return tfidf, X
+
+
+def bow_features(df):
+    cv = CountVectorizer(max_features=3000)
+    X = cv.fit_transform(df['joined'])
+    return cv, X
+
+
+def lda_topics(X_bow, cv, n_topics=5):
+    lda = LatentDirichletAllocation(n_components=n_topics, random_state=42)
+    lda.fit(X_bow)
+    terms = cv.get_feature_names_out()
+    topics = []
+    for idx, comp in enumerate(lda.components_):
+        top_terms = [terms[i] for i in comp.argsort()[-10:]]
+        topics.append({f'Topic_{idx}': top_terms})
+    return topics
+
+
+def sentiment(df):
+    df['sentiment'] = df['cleaned'].apply(lambda t: TextBlob(t).sentiment.polarity)
+    return df
+
+
+def generate_wordcloud(df):
+    text = ' '.join(df['joined'])
+    wc = WordCloud(width=600, height=400).generate(text)
+    plt.imshow(wc)
+    plt.axis('off')
+    plt.show()
+
+# ---- WRAPPER ---- #
+
+def run_nlp(df, text_col):
+    df = preprocess(df, text_col)
+    df = extract_ner_pos(df, text_col)
+    tfidf, X_tfidf = tfidf_features(df)
+    cv, X_bow = bow_features(df)
+    topics = lda_topics(X_bow, cv, n_topics=5)
+    df = sentiment(df)
+    return {
+        'df': df,
+        'tfidf_model': tfidf,
+        'tfidf_matrix': X_tfidf,
+        'bow_model': cv,
+        'bow_matrix': X_bow,
+        'topics': topics
+    }
+
+# ---- SAMPLE DF TO TEST ---- #
+
+def sample_test():
+    data = {
+        'text': [
+            "Apple is looking at buying a UK startup for $1 billion.",
+            "The quick brown fox jumps over the lazy dog.",
+            "Elon Musk announced a new Tesla model in California.",
+            "Python is widely used for data analysis and machine learning."
+        ]
+    }
+    df = pd.DataFrame(data)
+    output = run_nlp(df, 'text')
+
+    print("Processed DataFrame:\n", output['df'])
+    print("Topics:\n", output['topics'])
+
+    print("\nDisplaying Wordcloud...")
+    generate_wordcloud(output['df'])
+
+# To run sample test:
+sample_test()
